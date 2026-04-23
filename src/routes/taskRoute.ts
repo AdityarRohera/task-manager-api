@@ -7,6 +7,8 @@ const taskRoute = express.Router();
 taskRoute.use(userAuth);
 
 taskRoute.post('/create_task' , TaskController.createNewTaskHandler);
-taskRoute.post('/assign_task' , TaskController.assignTaskToUsers);
+taskRoute.post('/add_collaborators' , TaskController.addCollaburatorsHandler);
+
+taskRoute.get('/tasks' , TaskController.fetchTaskHandler);
 
 export default taskRoute;

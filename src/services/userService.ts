@@ -11,6 +11,11 @@ export const createUser = async({name , email , password} : any) => {
     return await pool.query(NewUserQuery , [name , email , password])
 }
 
+export const getUserById =async(userId : string) => {
+    const result = await UserQuery.GetUserBYIdQuery(userId);
+    return result.rows[0] || null;
+}
+
 export const getValidUsers = async(uniqueIds : string[]) => {
     const users = await UserQuery.getValidUsersQuery(uniqueIds);
     return users.rows.map(value => value.UID)

@@ -11,18 +11,23 @@ export const findTask = async(title : string , userId : string) => {
     return result.rows[0] || null
 }
 
-export const createTask = async({title , desc , userId} : TaskTypes.NewTaskType) => {
-    const result = await TaskQuery.createTaskQuery({title , desc , userId});
+export const createTask = async({title , desc , priorty, assigneeId, userId} : TaskTypes.NewTaskType) => {
+    const result = await TaskQuery.createTaskQuery({title , desc, priorty, assigneeId, userId});
     return result.rows[0];
 }
 
-export const alreadyAssignedTask = async(taskId : string , userIds : string[]) => {
-    const result = await TaskQuery.getAlreadyAssignedUsersQuery(taskId , userIds);
-    return result.rows.map(value => value.ASSIGNED_UID);
+export const getCollaborators = async(taskId : string , userIds : string[]) => {
+    const result = await TaskQuery.getCollaburatorsQuery(taskId , userIds);
+    return result.rows.map(value => value.COLLAORATORS_ID);
 }
 
 
-export const assignTask = async(taskId : string , userIds : string[]) => {
-    const result = await TaskQuery.assignTaskToUsersQuery(taskId , userIds);
+export const assignToCollaborate = async(taskId : string , userIds : string[]) => {
+    const result = await TaskQuery.addUsersToCollaborateQuery(taskId , userIds);
     return result.rows;
 }
+
+// get users tasks
+export const getTasks = async (userId: string, filters: any) => {
+    return await TaskQuery.fetchTasks(userId, filters);
+};

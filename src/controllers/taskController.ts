@@ -3,15 +3,36 @@ import type { AuthenticatedRequest } from "../middleware/auth";
 import * as taskService from "../services/taskService";
 import * as UserService from "../services/userService"
 
+ type Task_Status_Type = 'TODO' | 'INPROGESS' | 'DONE';
+ type priority_type = 'LOW' | 'MEDIUM' | 'HIGH';
+
 export const createNewTaskHandler = async(req : Request , res : Response) => {
 
         console.log("Inside createTaskHandler");
 
     try{
         const {userId} = (req as AuthenticatedRequest).user;
-        const {title , desc} =req.body;
+        const {title , desc , priorty , assigneeId} =req.body;
 
-        // validate task
+        // validate title , desc , priorty , assigneeId
+
+         // basic validation for assignee
+        if(!assigneeId || typeof assigneeId !== "string"){
+            return res.status(400).json({
+                status : false,
+                message : "Assignee id required"
+            })
+        }
+
+        // find assignee
+        const assigneeUser = await UserService.getUserById(assigneeId);
+        if(!assigneeUser){
+            return res.status(400).json({
+                status : false,
+                message : "Invalide assignee id"
+            })
+        }
+
 
         // check task already created or not
         const task = await taskService.findTask(title , userId);
@@ -24,7 +45,7 @@ export const createNewTaskHandler = async(req : Request , res : Response) => {
 
         
         // create new task 
-        const NewTask = await taskService.createTask({title , desc , userId});
+        const NewTask = await taskService.createTask({title , desc , priorty, assigneeId, userId});
         return res.status(200).json({
             status : true,
             message : "New Task Created",
@@ -54,14 +75,18 @@ export const createNewTaskHandler = async(req : Request , res : Response) => {
 
 
 
-export const assignTaskToUsers = async(req : Request , res : Response) => {
+export const addCollaburatorsHandler = async(req : Request , res : Response) => {
 
         console.log("Inside Assign task to user handler")
     try{
 
+
         const {userId} = (req as AuthenticatedRequest).user;
         console.log(userId);
         const {userIds , taskId} = req.body;
+
+        // validate task id
+        // const taks
 
 
         // ✅ 1. Validate input
@@ -107,42 +132,97 @@ export const assignTaskToUsers = async(req : Request , res : Response) => {
         console.log("Getting invalid id's &&&&&&&&&&&&" , invalidUserIds)
 
 
-        // handle if task already assigned to user
-        const alreadyAssignedUsers = await taskService.alreadyAssignedTask(taskId , validUserIds);
-        console.log("Getting alreay assigned users _____________ -> " , alreadyAssignedUsers);
-        if(alreadyAssignedUsers.length === validUserIds.length){
+        // handle if user already collaborating to task
+        const alreadyCollaboratingUsers = await taskService.getCollaborators(taskId , validUserIds);
+        console.log("Getting alreay assigned users _____________ -> " , alreadyCollaboratingUsers);
+        if(alreadyCollaboratingUsers.length === validUserIds.length){
             return res.status(400).json({
                 status : false,
                 invalidUserIdsCount : invalidUserIds.length,
                 invalidUserIds : invalidUserIds,
-                message : "Task is Already assigned to these users"
+                message : "These users already collaborating to this task"
             })
         }
 
         // now remainng users have i have to assign task
-        const alreadyAssignedUserSet = new Set(alreadyAssignedUsers);
-        const newUsersToAssignTask = validUserIds.filter(
-            (id : any) => !alreadyAssignedUserSet.has(id)
+        const alreadyCollaboratingUserSet = new Set(alreadyCollaboratingUsers);
+        const newUsersToCollaborate = validUserIds.filter(
+            (id : any) => !alreadyCollaboratingUserSet.has(id)
         )
 
         
-        const result = await taskService.assignTask(taskId , newUsersToAssignTask);
+        const result = await taskService.assignToCollaborate(taskId , newUsersToCollaborate);
         return res.status(200).json({
             status : true,
 
             invalidIdsCount : invalidUserIds.length,
             invalidIds : invalidUserIds,
 
-            alreadyAssignedUsersCount : alreadyAssignedUsers.length,
-            alreadyAssignedUserIds : alreadyAssignedUsers,
+            alreadyCollaboratingUsersCount : alreadyCollaboratingUsers.length,
+            alreadyCollaboratingUserIds : alreadyCollaboratingUsers,
 
-            assignedTaskCount: result.length,
-            assignedResult : result
+            AssigncollaboratorsCount: result.length,
+            Assigncollaborators : result
         })
 
 
     } catch(err){
-        console.log("Error comes in assignTaskToUsers" , err)
+        console.log("Error comes in assign users to collaborate" , err)
+
+        let errorMessage
+        if(err instanceof Error){
+            errorMessage = err.message
+        }
+
+        if(typeof err === "string"){
+            errorMessage = err
+        }
+
+        return res.status(500).json({
+            status : false,
+            message : "Internal Server Error",
+            err : errorMessage
+        })
+    }
+}
+
+
+// Dynamic get users task handler
+export const fetchTaskHandler = async(req : Request , res : Response) => {
+    
+    console.log("Inside Fetching task based on query");
+
+    try{
+
+        const {userId} = (req as AuthenticatedRequest).user;
+
+        const filters = {
+          scope: req.query.scope as string,
+          status: req.query.status as string,
+          priority: req.query.priority as string,
+          created_at: req.query.created_at as string,
+
+          page: Number(req.query.page) || 1,
+          limit: Number(req.query.limit) || 10,
+
+          sort_by: req.query.sort_by as string,
+          order: req.query.order as string
+        };
+
+        // PAGINATION PENDING
+
+        const tasks = await taskService.getTasks(userId, filters);
+
+        return res.status(200).json({
+          success: true,
+          data: tasks.data,
+          page : tasks.page,
+          limit : tasks.limit
+        });
+
+
+    } catch(err){
+        console.log("Error comes in get task handler" , err)
 
         let errorMessage
         if(err instanceof Error){

@@ -10,10 +10,14 @@ export const GetUserByEmailQuery = `
 
 
 // Find single user by id 
-export const GetUserBYIdQuery = `
-    SELECT * FROM users
-    WHERE "UID" = $1;
-`;
+export const GetUserBYIdQuery = async(userId : string) => {
+    const query = `
+        SELECT * FROM users
+        WHERE "UID" = $1; 
+    `
+
+    return await pool.query(query , [userId]);
+}
 
 
 // Create new user Query

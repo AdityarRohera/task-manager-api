@@ -4,5 +4,7 @@
 export interface NewTaskType {
   title: string;
   desc: string;
-  userId?: string;
+  priorty : 'LOW' | 'MEDIUM' | 'HIGH';
+  assigneeId : string;
+  userId: string;
 }

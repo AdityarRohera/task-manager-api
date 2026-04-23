@@ -20,22 +20,22 @@ export const userAuth = (req : Request , res : Response , next : Function) => {
             console.log("Inside user auth -> " , token , typeof(token))
 
             if(!token || typeof token!== "string"){
-                res.status(400).send({
+                return res.status(400).json({
                     success : false,
                     message : "Token Required"
                 })
-                return;
+            
             }
 
             // now verify token
             const verifyToken =  jwt.verify(token , secret!) as JwtPayload
 
             if(!verifyToken){
-            res.status(403).send({
+            return res.status(403).json({
                 success : false,
                 message: "Token invalid"
             })
-            return;
+    
             }
 
             userReq.user = verifyToken;

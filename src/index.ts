@@ -1,5 +1,5 @@
 
-import express, { urlencoded } from 'express'
+import express from 'express'
 import dotenv from 'dotenv';
 import cors from 'cors'
 import { connectToDb } from './config/dbConnect';
@@ -25,6 +25,13 @@ import taskRoute from './routes/taskRoute';
 app.use('/api/v1' , userRoute);
 app.use('/api/v1' , taskRoute);
 
+// Handle malformed JSON body errors from express.json()
+app.use((err: any, req: any, res: any, next: any) => {
+    if (err instanceof SyntaxError && (err as any).status === 400 && 'body' in err) {
+        return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+    next(err);
+});
 
 
 
