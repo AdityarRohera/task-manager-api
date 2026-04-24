@@ -11,4 +11,6 @@ taskRoute.post('/add_collaborators' , TaskController.addCollaburatorsHandler);
 
 taskRoute.get('/tasks' , TaskController.fetchTaskHandler);
 
+taskRoute.get('/task/:taskId' , TaskController.fetchSingleTaskHandler)
+
 export default taskRoute;

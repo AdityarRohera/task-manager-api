@@ -11,6 +11,16 @@ export const findTask = async(title : string , userId : string) => {
     return result.rows[0] || null
 }
 
+export const findSingleTask = async(taskId : string) => {
+    const result = await TaskQuery.findSingleTaskBYIdQuery(taskId)
+    return result.rows[0] || null
+}
+
+export const getFullTaskInfo = async(taskId : string) => {
+    const result = await TaskQuery.findFullTaskInfoQuery(taskId)
+    return result.rows
+}
+
 export const createTask = async({title , desc , priorty, assigneeId, userId} : TaskTypes.NewTaskType) => {
     const result = await TaskQuery.createTaskQuery({title , desc, priorty, assigneeId, userId});
     return result.rows[0];

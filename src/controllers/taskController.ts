@@ -214,7 +214,8 @@ export const fetchTaskHandler = async(req : Request , res : Response) => {
         const tasks = await taskService.getTasks(userId, filters);
 
         return res.status(200).json({
-          success: true,
+          status: true,
+          message : "Get All Task Successfully",
           data: tasks.data,
           page : tasks.page,
           limit : tasks.limit
@@ -223,6 +224,63 @@ export const fetchTaskHandler = async(req : Request , res : Response) => {
 
     } catch(err){
         console.log("Error comes in get task handler" , err)
+
+        let errorMessage
+        if(err instanceof Error){
+            errorMessage = err.message
+        }
+
+        if(typeof err === "string"){
+            errorMessage = err
+        }
+
+        return res.status(500).json({
+            status : false,
+            message : "Internal Server Error",
+            err : errorMessage
+        })
+    }
+}
+
+export const fetchSingleTaskHandler = async(req : Request , res : Response) => {
+    
+    console.log("Inside Fetching task based on query");
+
+    try{
+
+        const {userId} = (req as AuthenticatedRequest).user;
+        const {taskId} = req.params;
+
+        if(!taskId || typeof taskId !== "string"){
+            return res.status(400).json({
+                status : false,
+                message : "Task id required"
+            })
+        }
+
+        // validate task id 
+        const findTask = await taskService.findSingleTask(taskId as string);
+
+        if(!findTask){
+            return res.status(400).json({
+                status : false,
+                message : "Invalid Task Id"
+            })
+        }
+
+        // Now get full task with assigned user and collaborators
+        const fullTaskInfo = await taskService.getFullTaskInfo(taskId);
+
+
+        return res.status(200).json({
+          status: true,
+          message : "Get All Task Successfully",
+          taskInfo : fullTaskInfo
+        });
+
+
+    } catch(err){
+        console.log("Error comes in getting single task handler" , err)
 
         let errorMessage
         if(err instanceof Error){

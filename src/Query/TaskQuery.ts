@@ -13,6 +13,53 @@ export const findSingleTaskQuery = async(title : string , userId : string) => {
 }
 
 
+// getting single task by task id 
+export const findSingleTaskBYIdQuery = async(taskId : string) => {
+    const query = `
+        SELECT * FROM task
+        WHERE "TID" = $1;
+    `
+    return await pool.query(query , [taskId])
+}
+
+
+// getting full task with assignee and collaborators
+export const findFullTaskInfoQuery = async(taskId : string) => {
+    const query = `
+        SELECT 
+        T."TID" as "TASK_ID" ,
+        T."TITLE" AS "TASK_NAME",
+        T."DESCRIPTION" AS "DESCRIPTION",
+        T."STATUS" AS "STATUS",
+        T."CREATEDAT" AS "CREATEDAT",
+        U."NAME" AS "USER_NAME",
+
+        -- Use COALESCE to return an empty array [] instead of [null] if no collaborators exist
+        -- Aggregate a custom JSON object for each collaborator
+        COALESCE(
+            JSON_AGG(
+                JSON_BUILD_OBJECT(
+                    'id', UC."UID",
+                    'name', UC."NAME",
+                    'email', UC."EMAIL"
+                )
+            ) FILTER (WHERE UC."UID" IS NOT NULL), 
+            '[]'
+        ) AS ALL_COLLABORATORS
+        
+        FROM task T
+        JOIN users U on U."UID" = T."CREATEDBY"
+        LEFT JOIN collaborators C ON C."TASK_ID" = T."TID"
+        LEFT JOIN users UC ON UC."UID" = C."COLLAORATORS_ID"
+        WHERE "TID" = $1
+        GROUP BY "TID" , T."TITLE", T."DESCRIPTION", T."STATUS", T."CREATEDAT", U."NAME";
+
+    `
+    return await pool.query(query , [taskId])
+}
+
+
+
 
 // create new task
 export const createTaskQuery = async ({title , desc, priorty, assigneeId, userId} : TaskTypes.NewTaskType) : Promise<QueryResult> => {
